@@ -1,0 +1,423 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ article.title }} - NBA Truths{% endblock %}
+
+{% block meta_description %}{{ article.meta_description|default:article.excerpt|truncatewords:25 }}{% endblock %}
+
+{% block og_title %}{{ article.title }} - NBA Truths{% endblock %}
+{% block og_description %}{{ article.excerpt|truncatewords:20 }}{% endblock %}
+{% block og_image %}{% if article.featured_image %}{{ article.featured_image.url }}{% else %}{% static 'images/default-article.jpg' %}{% endif %}{% endblock %}
+
+{% block content %}
+<article class="article-detail">
+    <!-- Article Header -->
+    <section class="article-header py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <!-- Article Meta -->
+                    <div class="article-meta mb-3">
+                        {% if article.category %}
+                        <a href="{{ article.category.get_absolute_url }}" class="badge bg-primary text-decoration-none me-2">
+                            {{ article.category.name }}
+                        </a>
+                        {% endif %}
+                        
+                        {% for tag in article.tags.all|slice:":3" %}
+                        <a href="{% url 'blog:tagged_articles' tag.slug %}" class="badge bg-light text-dark text-decoration-none me-1">
+                            #{{ tag.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Article Title -->
+                    <h1 class="article-title display-5 fw-bold mb-3">{{ article.title }}</h1>
+                    
+                    {% if article.subtitle %}
+                    <p class="article-subtitle lead text-muted mb-4">{{ article.subtitle }}</p>
+                    {% endif %}
+                    
+                    <!-- Author & Date Info -->
+                    <div class="article-info d-flex flex-wrap align-items-center mb-4">
+                        <div class="author-info me-4">
+                            <span class="text-muted">By</span>
+                            <strong class="text-dark">{{ article.author.get_full_name|default:article.author.username }}</strong>
+                        </div>
+                        
+                        <div class="date-info me-4">
+                            <i class="fas fa-calendar text-muted me-1"></i>
+                            <time datetime="{{ article.published_at|date:'Y-m-d' }}">
+                                {{ article.published_at|date:"F j, Y" }}
+                            </time>
+                        </div>
+                        
+                        <div class="stats-info">
+                            <span class="me-3">
+                                <i class="fas fa-eye text-muted me-1"></i>
+                                {{ article.view_count|intcomma }} views
+                            </span>
+                            <span class="me-3">
+                                <i class="fas fa-clock text-muted me-1"></i>
+                                {{ article.reading_time }} min read
+                            </span>
+                            <span>
+                                <i class="fas fa-comments text-muted me-1"></i>
+                                {{ article.comments.count }} comments
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Social Share -->
+                    <div class="article-share">
+                        <span class="text-muted me-3">Share:</span>
+                        <a href="#" class="btn btn-outline-primary btn-sm me-2" onclick="shareOnTwitter()">
+                            <i class="fab fa-twitter"></i> Twitter
+                        </a>
+                        <a href="#" class="btn btn-outline-primary btn-sm me-2" onclick="shareOnFacebook()">
+                            <i class="fab fa-facebook"></i> Facebook
+                        </a>
+                        <a href="#" class="btn btn-outline-primary btn-sm" onclick="copyLink()">
+                            <i class="fas fa-link"></i> Copy Link
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Article Content -->
+    <section class="article-content py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Featured Image -->
+                    {% if article.featured_image %}
+                    <div class="featured-image mb-5">
+                        <img src="{{ article.featured_image.url }}" 
+                             class="img-fluid rounded shadow-sm" 
+                             alt="{{ article.featured_image_alt|default:article.title }}">
+                        {% if article.featured_image_alt %}
+                        <figcaption class="text-muted text-center mt-2 small">
+                            {{ article.featured_image_alt }}
+                        </figcaption>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Article Body -->
+                    <div class="article-body prose">
+                        {{ article.content|safe }}
+                    </div>
+                    
+                    <!-- Player Statistics Section -->
+                    {% if article.related_players.all %}
+                    <section class="player-stats mt-5 p-4 bg-light rounded">
+                        <h3 class="h4 mb-4">
+                            <i class="fas fa-chart-bar text-primary me-2"></i>Player Statistics
+                        </h3>
+                        
+                        <div class="row">
+                            {% for player in article.related_players.all %}
+                            <div class="col-md-6 mb-4">
+                                <div class="player-stat-card card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            {% if player.photo %}
+                                            <img src="{{ player.photo.url }}" class="player-photo me-3" alt="{{ player.name }}">
+                                            {% endif %}
+                                            <div>
+                                                <h4 class="h5 mb-1">{{ player.name }}</h4>
+                                                <p class="text-muted mb-0">{{ player.team.city }} {{ player.team.name }} • {{ player.get_position_display }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if player.id in player_stats %}
+                                        {% with stats=player_stats|lookup:player.id %}
+                                        <div class="stats-grid">
+                                            <div class="row text-center">
+                                                <div class="col-4">
+                                                    <div class="stat-item">
+                                                        <div class="stat-value h4 text-primary mb-0">{{ stats.points_per_game|floatformat:1 }}</div>
+                                                        <div class="stat-label small text-muted">PPG</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="stat-item">
+                                                        <div class="stat-value h4 text-success mb-0">{{ stats.rebounds_per_game|floatformat:1 }}</div>
+                                                        <div class="stat-label small text-muted">RPG</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="stat-item">
+                                                        <div class="stat-value h4 text-info mb-0">{{ stats.assists_per_game|floatformat:1 }}</div>
+                                                        <div class="stat-label small text-muted">APG</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <hr>
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <div class="stat-item">
+                                                        <div class="stat-value h6 mb-0">{{ stats.field_goal_percentage|floatformat:1 }}%</div>
+                                                        <div class="stat-label small text-muted">FG%</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="stat-item">
+                                                        <div class="stat-value h6 mb-0">{{ stats.three_point_percentage|floatformat:1 }}%</div>
+                                                        <div class="stat-label small text-muted">3P%</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endwith %}
+                                        {% endif %}
+                                        
+                                        <div class="mt-3">
+                                            <a href="{% url 'blog:player_detail' player.pk %}" class="btn btn-outline-primary btn-sm">
+                                                View Full Stats <i class="fas fa-arrow-right ms-1"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+                    
+                    <!-- Tags -->
+                    {% if article.tags.all %}
+                    <div class="article-tags mt-5">
+                        <h4 class="h5 mb-3">Tags</h4>
+                        {% for tag in article.tags.all %}
+                        <a href="{% url 'blog:tagged_articles' tag.slug %}" class="btn btn-outline-secondary btn-sm me-2 mb-2">
+                            #{{ tag.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Comments Section -->
+                    <section class="comments-section mt-5">
+                        <h3 class="h4 mb-4">
+                            <i class="fas fa-comments text-primary me-2"></i>
+                            Comments ({{ article.comments.count }})
+                        </h3>
+                        
+                        {% if user.is_authenticated %}
+                        <div class="comment-form mb-4">
+                            <form method="POST" action="#" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="comment-text" class="form-label">Add your comment</label>
+                                    <textarea class="form-control" id="comment-text" name="content" rows="4" 
+                                              placeholder="Share your thoughts on this analysis..." required></textarea>
+                                    <div class="invalid-feedback">Please enter a comment.</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-2"></i>Post Comment
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <a href="{% url 'login' %}">Login</a> to post a comment.
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Comments List -->
+                        <div class="comments-list">
+                            {% for comment in article.comments.all %}
+                            {% if comment.is_approved %}
+                            <div class="comment mb-4 p-3 bg-light rounded">
+                                <div class="comment-header d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                                        <small class="text-muted ms-2">{{ comment.created_at|timesince }} ago</small>
+                                    </div>
+                                </div>
+                                <div class="comment-content">
+                                    {{ comment.content|linebreaks }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% empty %}
+                            <p class="text-muted">No comments yet. Be the first to share your thoughts!</p>
+                            {% endfor %}
+                        </div>
+                    </section>
+                </div>
+                
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <div class="article-sidebar">
+                        <!-- Related Articles -->
+                        {% if related_articles %}
+                        <div class="sidebar-section mb-5">
+                            <h3 class="sidebar-title h5 mb-3">Related Articles</h3>
+                            {% for related in related_articles %}
+                            <div class="related-article d-flex mb-3">
+                                {% if related.featured_image %}
+                                <div class="related-image me-3">
+                                    <img src="{{ related.featured_image.url }}" class="img-fluid rounded" 
+                                         style="width: 80px; height: 60px; object-fit: cover;" alt="{{ related.title }}">
+                                </div>
+                                {% endif %}
+                                <div class="related-content">
+                                    <h4 class="related-title h6 mb-1">
+                                        <a href="{{ related.get_absolute_url }}" class="text-decoration-none text-dark">
+                                            {{ related.title|truncatechars:60 }}
+                                        </a>
+                                    </h4>
+                                    <small class="text-muted">{{ related.published_at|timesince }} ago</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Newsletter Signup -->
+                        <div class="sidebar-section newsletter-widget bg-primary text-white p-4 rounded">
+                            <h3 class="sidebar-title text-white h5">Stay in the Loop</h3>
+                            <p class="mb-3">Get the latest NBA insights delivered weekly.</p>
+                            
+                            <form method="POST" action="{% url 'blog:newsletter_signup' %}" class="newsletter-form">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <input type="email" name="email" class="form-control" placeholder="Your email" required>
+                                </div>
+                                <button type="submit" class="btn btn-light w-100">
+                                    Subscribe
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</article>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.article-title {
+    line-height: 1.2;
+}
+
+.article-subtitle {
+    font-size: 1.25rem;
+}
+
+.article-body {
+    font-size: 1.1rem;
+    line-height: 1.7;
+}
+
+.article-body p {
+    margin-bottom: 1.5rem;
+}
+
+.article-body h2, .article-body h3, .article-body h4 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.player-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.player-stat-card {
+    transition: transform 0.2s ease;
+}
+
+.player-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stat-value {
+    font-weight: 700;
+}
+
+.comment {
+    border-left: 4px solid #007bff;
+}
+
+.newsletter-widget {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+}
+
+.related-image img {
+    transition: transform 0.2s ease;
+}
+
+.related-article:hover .related-image img {
+    transform: scale(1.05);
+}
+
+.prose {
+    max-width: none;
+}
+
+.prose blockquote {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #6c757d;
+}
+
+.prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.375rem;
+    margin: 1.5rem 0;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareOnTwitter() {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent("{{ article.title|escapejs }}");
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+}
+
+function shareOnFacebook() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('Link copied to clipboard!');
+    });
+}
+
+// Track reading time
+let startTime = Date.now();
+window.addEventListener('beforeunload', function() {
+    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+    if (timeSpent > 10) { // Only track if user spent more than 10 seconds
+        fetch('{% url "blog:increment_views" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'article_id={{ article.id }}'
+        });
+    }
+});
+</script>
+{% endblock %}

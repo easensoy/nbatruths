@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}NBA Truths - Basketball Analytics & Thunder Insights{% endblock %}
+
+{% block meta_description %}Your premier destination for Oklahoma City Thunder analysis, NBA statistics, and data-driven basketball insights. Discover the truths behind the game.{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-background">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6">
+                    <div class="hero-content text-white">
+                        <h1 class="display-4 fw-bold mb-4">
+                            Uncovering NBA <span class="text-warning">Truths</span>
+                        </h1>
+                        <p class="lead mb-4">
+                            Data-driven analysis, Oklahoma City Thunder insights, and basketball analytics 
+                            that reveal the stories behind the statistics.
+                        </p>
+                        <div class="hero-buttons">
+                            <a href="{% url 'blog:article_list' %}" class="btn btn-primary btn-lg me-3">
+                                <i class="fas fa-newspaper me-2"></i>Read Articles
+                            </a>
+                            <a href="{% url 'blog:thunder' %}" class="btn btn-outline-light btn-lg">
+                                <i class="fas fa-bolt me-2"></i>Thunder Coverage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-stats bg-dark bg-opacity-75 rounded p-4">
+                        <h4 class="text-white mb-3">Latest Thunder Stats</h4>
+                        <div class="row text-center text-white">
+                            <div class="col-4">
+                                <div class="stat-item">
+                                    <h3 class="text-warning">{{ thunder_team.players.count|default:"15" }}</h3>
+                                    <p class="mb-0">Roster Size</p>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-item">
+                                    <h3 class="text-warning">{{ team_stats.avg_points|floatformat:1|default:"112.5" }}</h3>
+                                    <p class="mb-0">Avg Points</p>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-item">
+                                    <h3 class="text-warning">{{ thunder_articles.count|default:"25" }}</h3>
+                                    <p class="mb-0">Articles</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Articles -->
+{% if featured_articles %}
+<section class="featured-section py-5">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="section-title">Featured Analysis</h2>
+                <p class="text-muted">In-depth coverage of the stories shaping the NBA</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% for article in featured_articles %}
+            <div class="col-lg-4 mb-4">
+                <article class="featured-card h-100">
+                    <div class="card h-100 border-0 shadow-sm">
+                        {% if article.featured_image %}
+                        <div class="featured-image">
+                            <img src="{{ article.featured_image.url }}" class="card-img-top" alt="{{ article.featured_image_alt|default:article.title }}">
+                            <div class="featured-badge">
+                                <span class="badge bg-primary">Featured</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="card-body d-flex flex-column">
+                            <div class="article-meta mb-2">
+                                {% if article.category %}
+                                <a href="{{ article.category.get_absolute_url }}" class="badge bg-secondary text-decoration-none">
+                                    {{ article.category.name }}
+                                </a>
+                                {% endif %}
+                                <small class="text-muted ms-2">
+                                    <i class="fas fa-calendar me-1"></i>{{ article.published_at|date:"M j, Y" }}
+                                </small>
+                            </div>
+                            
+                            <h3 class="card-title h5 mb-3">
+                                <a href="{{ article.get_absolute_url }}" class="text-decoration-none text-dark">
+                                    {{ article.title }}
+                                </a>
+                            </h3>
+                            
+                            <p class="card-text text-muted mb-3">{{ article.excerpt|truncatewords:20 }}</p>
+                            
+                            <div class="article-footer mt-auto">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        By {{ article.author.get_full_name|default:article.author.username }}
+                                    </small>
+                                    <div class="article-stats">
+                                        <small class="text-muted">
+                                            <i class="fas fa-eye me-1"></i>{{ article.view_count|intcomma }}
+                                            <i class="fas fa-clock ms-2 me-1"></i>{{ article.reading_time }} min
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Thunder Focus Section -->
+{% if thunder_articles %}
+<section class="thunder-section py-5 bg-light">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="section-title">
+                    <i class="fas fa-bolt text-warning me-2"></i>Thunder Focus
+                </h2>
+                <p class="text-muted">Dedicated coverage of Oklahoma City Thunder</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% for article in thunder_articles %}
+            <div class="col-lg-6 mb-4">
+                <article class="thunder-card">
+                    <div class="card border-0 shadow-sm">
+                        <div class="row g-0">
+                            {% if article.featured_image %}
+                            <div class="col-md-4">
+                                <img src="{{ article.featured_image.url }}" class="img-fluid rounded-start h-100 object-cover" alt="{{ article.title }}">
+                            </div>
+                            <div class="col-md-8">
+                            {% else %}
+                            <div class="col-12">
+                            {% endif %}
+                                <div class="card-body">
+                                    <div class="article-meta mb-2">
+                                        <span class="badge bg-warning text-dark">Thunder</span>
+                                        <small class="text-muted ms-2">{{ article.published_at|date:"M j" }}</small>
+                                    </div>
+                                    
+                                    <h4 class="card-title h6 mb-2">
+                                        <a href="{{ article.get_absolute_url }}" class="text-decoration-none text-dark">
+                                            {{ article.title|truncatechars:60 }}
+                                        </a>
+                                    </h4>
+                                    
+                                    <p class="card-text text-muted small mb-2">
+                                        {{ article.excerpt|truncatewords:15 }}
+                                    </p>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">{{ article.author.username }}</small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-eye me-1"></i>{{ article.view_count }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center">
+            <a href="{% url 'blog:thunder' %}" class="btn btn-outline-primary">
+                View All Thunder Coverage <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Recent Articles & Popular Content -->
+<section class="content-section py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Recent Articles -->
+            <div class="col-lg-8 mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title mb-0">Latest Articles</h2>
+                    <a href="{% url 'blog:article_list' %}" class="btn btn-outline-primary btn-sm">
+                        View All <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                
+                <div class="row">
+                    {% for article in recent_articles|slice:":6" %}
+                    <div class="col-md-6 mb-4">
+                        <article class="recent-card">
+                            <div class="card h-100 border-0 shadow-sm">
+                                {% if article.featured_image %}
+                                <img src="{{ article.featured_image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ article.title }}">
+                                {% endif %}
+                                
+                                <div class="card-body d-flex flex-column">
+                                    <div class="article-meta mb-2">
+                                        {% if article.category %}
+                                        <a href="{{ article.category.get_absolute_url }}" class="badge bg-light text-dark text-decoration-none">
+                                            {{ article.category.name }}
+                                        </a>
+                                        {% endif %}
+                                        <small class="text-muted ms-2">{{ article.published_at|timesince }} ago</small>
+                                    </div>
+                                    
+                                    <h3 class="card-title h6 mb-2">
+                                        <a href="{{ article.get_absolute_url }}" class="text-decoration-none text-dark">
+                                            {{ article.title|truncatechars:60 }}
+                                        </a>
+                                    </h3>
+                                    
+                                    <p class="card-text text-muted small mb-3">
+                                        {{ article.excerpt|truncatewords:12 }}
+                                    </p>
+                                    
+                                    <div class="mt-auto">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">{{ article.author.username }}</small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-eye me-1"></i>{{ article.view_count }}
+                                                <i class="fas fa-clock ms-2 me-1"></i>{{ article.reading_time }}m
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Popular Articles -->
+                {% if popular_articles %}
+                <div class="sidebar-section mb-4">
+                    <h3 class="sidebar-title">Most Popular</h3>
+                    <div class="popular-list">
+                        {% for article in popular_articles %}
+                        <div class="popular-item d-flex mb-3">
+                            <div class="popular-number">
+                                <span class="badge bg-primary rounded-circle">{{ forloop.counter }}</span>
+                            </div>
+                            <div class="popular-content ms-3">
+                                <h4 class="popular-title h6 mb-1">
+                                    <a href="{{ article.get_absolute_url }}" class="text-decoration-none text-dark">
+                                        {{ article.title|truncatechars:50 }}
+                                    </a>
+                                </h4>
+                                <small class="text-muted">
+                                    {{ article.view_count|intcomma }} views • {{ article.published_at|timesince }} ago
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Newsletter Signup -->
+                <div class="sidebar-section newsletter-widget bg-primary text-white p-4 rounded">
+                    <h3 class="sidebar-title text-white">Stay Updated</h3>
+                    <p class="mb-3">Get the latest NBA insights and Thunder analysis delivered to your inbox.</p>
+                    
+                    <form method="POST" action="{% url 'blog:newsletter_signup' %}" class="newsletter-form">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                        </div>
+                        <button type="submit" class="btn btn-light w-100">
+                            <i class="fas fa-envelope me-2"></i>Subscribe
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('{% static "images/hero-bg.jpg" %}') center/cover;
+    opacity: 0.1;
+    z-index: 0;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.section-title {
+    font-weight: 600;
+    color: #1e3c72;
+    margin-bottom: 0.5rem;
+}
+
+.featured-card .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.featured-card .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+
+.featured-image {
+    position: relative;
+    overflow: hidden;
+}
+
+.featured-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 2;
+}
+
+.thunder-card .card:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+}
+
+.popular-number {
+    flex-shrink: 0;
+}
+
+.newsletter-widget {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+}
+
+.object-cover {
+    object-fit: cover;
+}
+</style>
+{% endblock %}
